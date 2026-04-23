@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frameflow Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/Users/yh/img/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">F</div>
+        <div>
+          <p class="eyebrow">Browser Visual Workspace</p>
+          <h1>Frameflow</h1>
+        </div>
+      </div>
+
+      <nav class="top-actions">
+        <button class="ghost screen-tab active" data-screen="editor">Editor</button>
+        <button class="ghost screen-tab" data-screen="library">Asset Library</button>
+        <button class="ghost screen-tab" data-screen="jobs">Batch Jobs</button>
+        <button class="ghost screen-tab" data-screen="review-link">Review Link</button>
+        <button class="ghost screen-tab" data-screen="exports">Export Presets</button>
+        <button class="ghost screen-tab" data-screen="versions">Version History</button>
+        <button class="ghost screen-tab" data-screen="ai">AI Assist</button>
+        <button class="ghost">Capture</button>
+        <button class="ghost">Import</button>
+        <button class="ghost">Share</button>
+        <button class="primary">Publish Review Link</button>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Prototype Direction</p>
+        <h2>Snagit speed. ACDSee depth. Built for the browser.</h2>
+        <p>
+          A collaborative image-editing workspace for screenshots, product visuals,
+          annotated guides, and high-volume asset workflows.
+        </p>
+
+        <div class="mode-switch" aria-label="Mode switcher">
+          <button class="mode-pill active" data-mode="quick">Quick Mode</button>
+          <button class="mode-pill" data-mode="studio">Studio Mode</button>
+          <button class="mode-pill" data-mode="review">Review Mode</button>
+        </div>
+      </div>
+
+      <div class="hero-metrics">
+        <article class="metric-card">
+          <span>Time To First Edit</span>
+          <strong>&lt; 5 sec</strong>
+        </article>
+        <article class="metric-card">
+          <span>Primary Flows</span>
+          <strong>Capture, Edit, Review</strong>
+        </article>
+        <article class="metric-card">
+          <span>Design Principle</span>
+          <strong>Non-destructive by default</strong>
+        </article>
+      </div>
+    </section>
+
+    <main class="workspace screen active" id="workspace" data-screen="editor">
+      <aside class="left-rail panel">
+        <div class="panel-header">
+          <h3>Flows</h3>
+          <span>3</span>
+        </div>
+
+        <button class="rail-item active" data-flow="capture">
+          <strong>Capture to Guide</strong>
+          <span>Scrolling capture, OCR, steps, share link</span>
+        </button>
+
+        <button class="rail-item" data-flow="product">
+          <strong>Product Image Studio</strong>
+          <span>Background removal, masks, lighting, variants</span>
+        </button>
+
+        <button class="rail-item" data-flow="review">
+          <strong>Team Review</strong>
+          <span>Comments, approvals, version compare, export presets</span>
+        </button>
+
+        <div class="panel-divider"></div>
+
+        <div class="asset-stack">
+          <div class="mini-card warm">
+            <p class="eyebrow">Recent Capture</p>
+            <h4>Pricing Page Walkthrough</h4>
+            <span>14 steps • OCR ready</span>
+          </div>
+          <div class="mini-card cool">
+            <p class="eyebrow">Batch Queue</p>
+            <h4>24 product variants</h4>
+            <span>Resize, watermark, AVIF export</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="center-stage">
+        <div class="canvas-toolbar panel">
+          <div class="tool-group">
+            <button class="tool active">Arrow</button>
+            <button class="tool">Callout</button>
+            <button class="tool">Step</button>
+            <button class="tool">Blur</button>
+            <button class="tool">Text</button>
+            <button class="tool">Mask</button>
+          </div>
+          <div class="tool-group">
+            <button class="tool">Compare</button>
+            <button class="tool">Versions</button>
+            <button class="tool">AI Assist</button>
+          </div>
+        </div>
+
+        <section class="canvas panel">
+          <div class="canvas-header">
+            <div>
+              <p class="eyebrow" id="canvas-label">Quick Workflow</p>
+              <h3 id="canvas-title">Capture, explain, and send in one pass</h3>
+            </div>
+            <div class="status-badge">Auto-saved 12s ago</div>
+          </div>
+
+          <div class="artboard" id="artboard">
+            <div class="browser-chrome">
+              <span></span><span></span><span></span>
+              <div class="fake-url">app.frameflow.design/pricing?walkthrough=onboarding</div>
+            </div>
+
+            <div class="mock-screen">
+              <div class="chart-card"></div>
+              <div class="chart-grid">
+                <div class="tile large"></div>
+                <div class="tile"></div>
+                <div class="tile"></div>
+                <div class="tile wide"></div>
+              </div>
+
+              <div class="annotation step-one">1</div>
+              <div class="annotation-line line-one"></div>
+              <div class="note note-one">
+                <strong>Detected step</strong>
+                <span>Open pricing analytics panel</span>
+              </div>
+
+              <div class="annotation step-two">2</div>
+              <div class="annotation-line line-two"></div>
+              <div class="note note-two">
+                <strong>Smart OCR</strong>
+                <span>Editable text region found</span>
+              </div>
+
+              <div class="focus-ring"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="bottom-strip">
+          <article class="panel strip-card">
+            <p class="eyebrow">Templates</p>
+            <h4>Guide, Timeline, Product Sheet</h4>
+            <span>Reusable output structures, not just blank canvases.</span>
+          </article>
+          <article class="panel strip-card">
+            <p class="eyebrow">Batch Engine</p>
+            <h4>Queue-heavy work in the background</h4>
+            <span>Exports, AI cleanup, tagging, variants, and presets.</span>
+          </article>
+          <article class="panel strip-card">
+            <p class="eyebrow">Collaboration</p>
+            <h4>Review links with context</h4>
+            <span>Comments, approvals, pinned notes, and asset versions.</span>
+          </article>
+        </section>
+      </section>
+
+      <aside class="right-rail panel">
+        <div class="panel-header">
+          <h3>Inspector</h3>
+          <span>Live</span>
+        </div>
+
+        <section class="inspector-group">
+          <p class="eyebrow">Mode Focus</p>
+          <h4 id="inspector-title">Quick markup and guided communication</h4>
+          <p id="inspector-copy">
+            Keep the UI light, keep the canvas central, and keep the share action
+            always visible.
+          </p>
+        </section>
+
+        <section class="inspector-group">
+          <p class="eyebrow">Active Stack</p>
+          <ul class="token-list" id="token-list">
+            <li>Step Capture</li>
+            <li>OCR Text Regions</li>
+            <li>Brand Theme</li>
+            <li>Review Link</li>
+          </ul>
+        </section>
+
+        <section class="inspector-group">
+          <p class="eyebrow">Principles</p>
+          <ul class="principles">
+            <li>Canvas-first layout</li>
+            <li>Progressive reveal of advanced tools</li>
+            <li>Async jobs for heavy processing</li>
+            <li>Version-safe non-destructive edits</li>
+          </ul>
+        </section>
+
+        <section class="inspector-group">
+          <p class="eyebrow">Comments</p>
+          <div class="comment">
+            <strong>Mina</strong>
+            <span>Love the numbered-step flow. Keep this visible in review mode.</span>
+          </div>
+          <div class="comment">
+            <strong>Rafi</strong>
+            <span>Need a faster switch from annotation to asset variants.</span>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="screen library-screen" data-screen="library">
+      <div class="screen-shell">
+        <aside class="screen-sidebar panel">
+          <div class="panel-header">
+            <h3>Collections</h3>
+            <span>128</span>
+          </div>
+          <button class="rail-item active">
+            <strong>Launch Assets</strong>
+            <span>Tagged, approved, brand-safe</span>
+          </button>
+          <button class="rail-item">
+            <strong>Onboarding Captures</strong>
+            <span>OCR indexed, step-guide ready</span>
+          </button>
+          <button class="rail-item">
+            <strong>Spring Campaign</strong>
+            <span>Variants, review notes, exports</span>
+          </button>
+          <div class="panel-divider"></div>
+          <section class="inspector-group">
+            <p class="eyebrow">Search System</p>
+            <h4>Metadata-first browsing</h4>
+            <p>Ratings, tags, OCR text, AI keywords, duplicates, and people/product grouping.</p>
+          </section>
+        </aside>
+
+        <section class="screen-main">
+          <div class="screen-toolbar panel">
+            <div class="toolbar-title">
+              <p class="eyebrow">Asset Library</p>
+              <h3>Find the right image fast, then branch into edits or exports</h3>
+            </div>
+            <div class="tool-group">
+              <button class="tool active">All Assets</button>
+              <button class="tool">Duplicates</button>
+              <button class="tool">OCR Hits</button>
+              <button class="tool">Approved</button>
+            </div>
+          </div>
+
+          <div class="library-overview">
+            <article class="panel stat-panel">
+              <span>Indexed Assets</span>
+              <strong>12,482</strong>
+            </article>
+            <article class="panel stat-panel">
+              <span>Detected Duplicates</span>
+              <strong>184 groups</strong>
+            </article>
+            <article class="panel stat-panel">
+              <span>Saved Presets</span>
+              <strong>37</strong>
+            </article>
+            <article class="panel stat-panel">
+              <span>Ready For Review</span>
+              <strong>52</strong>
+            </article>
+          </div>
+
+          <div class="panel library-board">
+            <div class="library-header">
+              <div>
+                <p class="eyebrow">Smart Query</p>
+                <h4>"approved product shots with transparent background and square export"</h4>
+              </div>
+              <div class="status-badge">Live filters: 7</div>
+            </div>
+
+            <div class="library-grid">
+              <article class="asset-card featured">
+                <div class="asset-thumb gradient-a"></div>
+                <div class="asset-meta">
+                  <strong>Headphones Hero 04</strong>
+                  <span>Transparent PNG • Approved • 4 variants</span>
+                </div>
+              </article>
+              <article class="asset-card">
+                <div class="asset-thumb gradient-b"></div>
+                <div class="asset-meta">
+                  <strong>Checkout Walkthrough</strong>
+                  <span>OCR indexed • 9 steps • Share link</span>
+                </div>
+              </article>
+              <article class="asset-card">
+                <div class="asset-thumb gradient-c"></div>
+                <div class="asset-meta">
+                  <strong>Studio Bottle 12</strong>
+                  <span>AVIF + WEBP preset • Needs review</span>
+                </div>
+              </article>
+              <article class="asset-card">
+                <div class="asset-thumb gradient-d"></div>
+                <div class="asset-meta">
+                  <strong>Campaign Banner Crop</strong>
+                  <span>Version 7 • Social preset • Comments 3</span>
+                </div>
+              </article>
+              <article class="asset-card">
+                <div class="asset-thumb gradient-e"></div>
+                <div class="asset-meta">
+                  <strong>Pricing Capture Full Page</strong>
+                  <span>Scrolling capture • Text editable</span>
+                </div>
+              </article>
+              <article class="asset-card">
+                <div class="asset-thumb gradient-f"></div>
+                <div class="asset-meta">
+                  <strong>Duplicate Group 18</strong>
+                  <span>6 similar assets • Merge suggestion ready</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen jobs-screen" data-screen="jobs">
+      <div class="screen-shell jobs-layout">
+        <section class="screen-main">
+          <div class="screen-toolbar panel">
+            <div class="toolbar-title">
+              <p class="eyebrow">Batch Jobs</p>
+              <h3>Move heavy processing off the critical path, but keep it visible</h3>
+            </div>
+            <div class="tool-group">
+              <button class="tool active">Running</button>
+              <button class="tool">Queued</button>
+              <button class="tool">Failed</button>
+              <button class="tool">Completed</button>
+            </div>
+          </div>
+
+          <div class="jobs-stack">
+            <article class="panel job-card running">
+              <div class="job-topline">
+                <div>
+                  <p class="eyebrow">Running</p>
+                  <h4>Marketplace Product Cleanup</h4>
+                </div>
+                <div class="status-badge">62% complete</div>
+              </div>
+              <p>Remove backgrounds, normalize lighting, generate square/portrait variants, and export AVIF + PNG.</p>
+              <div class="progress-track"><div class="progress-bar progress-62"></div></div>
+              <div class="job-tags">
+                <span>124 assets</span>
+                <span>AI Masking</span>
+                <span>3 export presets</span>
+              </div>
+            </article>
+
+            <article class="panel job-card queued">
+              <div class="job-topline">
+                <div>
+                  <p class="eyebrow">Queued</p>
+                  <h4>Help Center Screenshot Pass</h4>
+                </div>
+                <div class="status-badge">Starts next</div>
+              </div>
+              <p>Apply brand theme, number detected steps, blur personal data, and publish documentation review links.</p>
+              <div class="job-tags">
+                <span>48 captures</span>
+                <span>OCR + Redact</span>
+                <span>Guide template</span>
+              </div>
+            </article>
+
+            <article class="panel job-card failed">
+              <div class="job-topline">
+                <div>
+                  <p class="eyebrow">Needs Attention</p>
+                  <h4>Retail Catalog Resize</h4>
+                </div>
+                <div class="status-badge">3 errors</div>
+              </div>
+              <p>Three source files have missing fonts and one image exceeded the transparency export rule.</p>
+              <div class="job-tags">
+                <span>Open error bundle</span>
+                <span>Retry failed only</span>
+                <span>Save fix as preset</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <aside class="screen-sidebar panel">
+          <div class="panel-header">
+            <h3>Job Recipe</h3>
+            <span>Reusable</span>
+          </div>
+          <section class="inspector-group">
+            <p class="eyebrow">Pipeline</p>
+            <ul class="principles">
+              <li>Detect duplicate assets</li>
+              <li>Apply AI masking</li>
+              <li>Run quality rules</li>
+              <li>Generate variants</li>
+              <li>Export by destination</li>
+            </ul>
+          </section>
+          <section class="inspector-group">
+            <p class="eyebrow">Why it matters</p>
+            <p>The browser app should feel calm during heavy work. Jobs run in the background, results stay traceable, and failures are recoverable.</p>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+
+    <section class="screen exports-screen" data-screen="exports">
+      <div class="screen-shell jobs-layout">
+        <section class="screen-main">
+          <div class="screen-toolbar panel">
+            <div class="toolbar-title">
+              <p class="eyebrow">Export Presets</p>
+              <h3>Map file output to real destinations, not just formats</h3>
+            </div>
+            <div class="tool-group">
+              <button class="tool active">Web</button>
+              <button class="tool">Docs</button>
+              <button class="tool">Marketplace</button>
+              <button class="tool">Review</button>
+            </div>
+          </div>
+
+          <div class="preset-grid">
+            <article class="panel preset-card featured-preset">
+              <p class="eyebrow">Default Team Preset</p>
+              <h4>Product Launch Bundle</h4>
+              <p>Exports AVIF, PNG transparency, review PDF, and a signed share link in one action.</p>
+              <div class="job-tags">
+                <span>Hero 2400px</span>
+                <span>Square 1600px</span>
+                <span>Watermark off</span>
+                <span>Color profile locked</span>
+              </div>
+            </article>
+            <article class="panel preset-card">
+              <p class="eyebrow">Docs</p>
+              <h4>Help Center Guide</h4>
+              <p>PNG + PDF bundle with numbered steps, OCR text, and blur rules.</p>
+            </article>
+            <article class="panel preset-card">
+              <p class="eyebrow">Review</p>
+              <h4>Stakeholder Link</h4>
+              <p>Interactive review page with compare enabled and comments open.</p>
+            </article>
+            <article class="panel preset-card">
+              <p class="eyebrow">Commerce</p>
+              <h4>Marketplace Sync</h4>
+              <p>Transparent PNG, white JPG fallback, and mobile-safe crop variants.</p>
+            </article>
+          </div>
+        </section>
+
+        <aside class="screen-sidebar panel">
+          <div class="panel-header">
+            <h3>Preset Rules</h3>
+            <span>Intent-aware</span>
+          </div>
+          <section class="inspector-group">
+            <p class="eyebrow">Principle</p>
+            <p>Users should choose where an asset is going, and the app should infer the right output recipe.</p>
+          </section>
+          <section class="inspector-group">
+            <p class="eyebrow">Included Controls</p>
+            <ul class="principles">
+              <li>Format bundles</li>
+              <li>Destination-specific sizes</li>
+              <li>Metadata retention rules</li>
+              <li>Approval gates before export</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen versions-screen" data-screen="versions">
+      <div class="screen-shell jobs-layout">
+        <section class="screen-main">
+          <div class="screen-toolbar panel">
+            <div class="toolbar-title">
+              <p class="eyebrow">Version History</p>
+              <h3>Keep edits reversible, comparable, and safe for teams</h3>
+            </div>
+            <div class="tool-group">
+              <button class="tool active">Timeline</button>
+              <button class="tool">Compare</button>
+              <button class="tool">Restore</button>
+            </div>
+          </div>
+
+          <div class="panel version-stage">
+            <div class="version-compare">
+              <div class="compare-card before">
+                <p class="eyebrow">Version 6</p>
+                <h4>Before OCR cleanup</h4>
+              </div>
+              <div class="compare-card after">
+                <p class="eyebrow">Version 7</p>
+                <h4>After OCR + callout alignment</h4>
+              </div>
+            </div>
+
+            <div class="timeline-list">
+              <div class="timeline-item active">
+                <strong>v7</strong>
+                <span>OCR text fixed, callout moved, exported review link</span>
+              </div>
+              <div class="timeline-item">
+                <strong>v6</strong>
+                <span>Blur regions adjusted and brand colors applied</span>
+              </div>
+              <div class="timeline-item">
+                <strong>v5</strong>
+                <span>Initial scrolling capture stitched automatically</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="screen-sidebar panel">
+          <div class="panel-header">
+            <h3>Safety Model</h3>
+            <span>Non-destructive</span>
+          </div>
+          <section class="inspector-group">
+            <p class="eyebrow">What matters</p>
+            <ul class="principles">
+              <li>Original never overwritten</li>
+              <li>Operations stored as edit graph</li>
+              <li>Named milestones for review</li>
+              <li>Selective rollback</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen ai-screen" data-screen="ai">
+      <div class="screen-shell jobs-layout">
+        <section class="screen-main">
+          <div class="screen-toolbar panel">
+            <div class="toolbar-title">
+              <p class="eyebrow">AI Assist</p>
+              <h3>Use AI for the boring parts, while keeping the human in charge</h3>
+            </div>
+            <div class="tool-group">
+              <button class="tool active">Suggestions</button>
+              <button class="tool">Redact</button>
+              <button class="tool">Mask</button>
+              <button class="tool">Rewrite</button>
+            </div>
+          </div>
+
+          <div class="ai-grid">
+            <article class="panel ai-card suggestion">
+              <p class="eyebrow">Detected Opportunity</p>
+              <h4>Generate step guide from capture</h4>
+              <p>Found 6 likely interaction steps and 3 editable text regions.</p>
+              <div class="job-tags">
+                <span>Apply steps</span>
+                <span>Preview first</span>
+              </div>
+            </article>
+            <article class="panel ai-card suggestion">
+              <p class="eyebrow">Sensitive Data</p>
+              <h4>Smart redact suggestion</h4>
+              <p>Detected email addresses and account IDs inside the screenshot.</p>
+              <div class="job-tags">
+                <span>Blur</span>
+                <span>Redact permanently</span>
+              </div>
+            </article>
+            <article class="panel ai-card suggestion">
+              <p class="eyebrow">Photo Workflow</p>
+              <h4>Mask subject and relight background</h4>
+              <p>Recommended for 24 catalog images with uneven lighting.</p>
+              <div class="job-tags">
+                <span>Create batch job</span>
+                <span>Save as preset</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <aside class="screen-sidebar panel">
+          <div class="panel-header">
+            <h3>AI Principles</h3>
+            <span>Assistive</span>
+          </div>
+          <section class="inspector-group">
+            <p class="eyebrow">Guardrails</p>
+            <ul class="principles">
+              <li>Show previews before apply</li>
+              <li>Expose confidence for risky actions</li>
+              <li>Prefer suggestions over silent edits</li>
+              <li>Always allow manual override</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen review-screen" data-screen="review-link">
+      <div class="review-shell panel">
+        <div class="review-topbar">
+          <div>
+            <p class="eyebrow">Review Link</p>
+            <h3>Checkout Flow Markup v7</h3>
+          </div>
+          <div class="tool-group">
+            <button class="tool active">Comment</button>
+            <button class="tool">Compare</button>
+            <button class="tool">Approve</button>
+          </div>
+        </div>
+
+        <div class="review-layout">
+          <section class="review-canvas">
+            <div class="review-art">
+              <div class="review-image">
+                <div class="review-pin pin-one">1</div>
+                <div class="review-pin pin-two">2</div>
+                <div class="review-pin pin-three">3</div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="review-sidebar">
+            <section class="inspector-group">
+              <p class="eyebrow">Summary</p>
+              <h4>Ready for stakeholder sign-off</h4>
+              <p>This screen treats review as a first-class destination: contextual comments, version compare, and explicit approval state.</p>
+            </section>
+
+            <section class="inspector-group">
+              <p class="eyebrow">Threaded Notes</p>
+              <div class="comment">
+                <strong>Mina</strong>
+                <span>Pin 1: copy is much clearer after OCR edit. Good to approve.</span>
+              </div>
+              <div class="comment">
+                <strong>Jules</strong>
+                <span>Pin 2: keep the callout style, but move it 12px lower.</span>
+              </div>
+              <div class="comment">
+                <strong>Rafi</strong>
+                <span>Pin 3: export both PNG and review PDF once approved.</span>
+              </div>
+            </section>
+
+            <section class="inspector-group">
+              <p class="eyebrow">Decision State</p>
+              <ul class="token-list">
+                <li>2 approvals received</li>
+                <li>1 change request open</li>
+                <li>Compare against v6 available</li>
+                <li>Export preset attached</li>
+              </ul>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/Users/yh/img/script.js"></script>
+</body>
+</html>
