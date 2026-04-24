@@ -720,7 +720,7 @@ async function runGrabText(image, setOcrState, notify) {
   try {
     const mod = await import('https://cdn.jsdelivr.net/npm/tesseract.js@5/+esm');
     const Tesseract = mod.default || mod;
-    const result = await Tesseract.recognize(image.url, 'eng', {
+    const result = await Tesseract.recognize(image.url, 'tur+eng', {
       logger: (m) => {
         if (m.status === 'recognizing text') {
           setOcrState((s) => ({ ...(s || {}), loading: true, text: '', progress: Math.round(m.progress * 100) }));
@@ -1956,7 +1956,7 @@ const shapeSwatches = [
 const defaultFilters = { brightness: 100, contrast: 100, saturation: 100, filter: 'none', border: 0, rotate: 0, flipH: false, flipV: false };
 
 function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoadedImage }) {
-  const [activeTool, setActiveTool] = useState('Arrow');
+  const [activeTool, setActiveTool] = useState(null);
   const [annotations, setAnnotations] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const [pendingArrow, setPendingArrow] = useState(null);
@@ -2190,6 +2190,22 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
     }, 'image/png');
   };
 
+  const [selectedId, setSelectedId] = React.useState(null);
+  const selectedAnn = React.useMemo(() => annotations.find((a) => a.id === selectedId) || null, [annotations, selectedId]);
+
+  const makeAnnProps = (defaults, mapFrom, mapPatch) => {
+    if (!selectedAnn) return null;
+    const view = { ...defaults, ...mapFrom(selectedAnn) };
+    const setView = (fn) => {
+      const next = typeof fn === 'function' ? fn(view) : fn;
+      const diff = {};
+      Object.keys(next).forEach((k) => { if (next[k] !== view[k]) diff[k] = next[k]; });
+      const patch = mapPatch(diff);
+      if (Object.keys(patch).length) updateAnnotation(selectedId, patch);
+    };
+    return [view, setView];
+  };
+
   const addAnnotation = (ann) => {
     setAnnotations((a) => [...a, { id: Date.now() + Math.random(), ...ann }]);
     setRedoStack([]);
@@ -2347,7 +2363,12 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
                 <p className="eyebrow">Loaded File</p>
                 <h3>{loadedImage.name}</h3>
               </div>
-              <div className="status-badge">{(loadedImage.size / 1024).toFixed(1)} KB</div>
+              <div className="canvas-meta-inline">
+                {loadedImage.width && loadedImage.height && <span>{loadedImage.width}×{loadedImage.height}</span>}
+                <span>{(loadedImage.size / 1024).toFixed(1)} KB</span>
+                <span>{annotations.length} annotations</span>
+                <span className="hint">Right-click for menu · Esc to cancel</span>
+              </div>
             </div>
           )}
           {loadedImage ? (
@@ -2372,6 +2393,8 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
               canvasSize={canvasSize}
               canvasBg={canvasBg}
               zoom={zoom}
+              selectedId={selectedId}
+              setSelectedId={setSelectedId}
               onCrop={applyCrop}
             />
           ) : folderView ? (
@@ -2451,35 +2474,65 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
           </section>
         )}
 
-        {(activeTool === 'Text' || activeTool === 'Callout') && (
-          <ToolProperties
-            tool={activeTool}
-            props={textProps}
-            setProps={setTextProps}
-            color={style.color}
-            setColor={(v) => setStyle((s) => ({ ...s, color: v }))}
-            pickColor={pickColor}
-            swapColors={swapColors}
-          />
-        )}
-        {activeTool === 'Shape' && (
-          <ShapeProperties props={shapeProps} setProps={setShapeProps} />
-        )}
-        {activeTool === 'Fill' && (
-          <FillProperties props={fillProps} setProps={setFillProps} pickColor={pickColor} />
-        )}
-        {activeTool === 'Selection' && (
-          <SelectionProperties props={selectionProps} setProps={setSelectionProps} />
-        )}
-        {activeTool === 'Arrow' && (
-          <ArrowProperties props={arrowProps} setProps={setArrowProps} />
-        )}
-        {activeTool === 'Highlight' && (
-          <HighlightProperties props={highlightProps} setProps={setHighlightProps} />
-        )}
-        {activeTool === 'Pen' && (
-          <PenProperties props={penProps} setProps={setPenProps} />
-        )}
+        {(() => {
+          if (selectedAnn) {
+            const kind = selectedAnn.kind;
+            const baseFrom = (a) => ({ color: a.color, opacity: a.opacity ?? 100, width: a.stroke ?? 4 });
+            const basePatch = (d) => {
+              const p = {};
+              if ('color' in d) p.color = d.color;
+              if ('opacity' in d) p.opacity = d.opacity;
+              if ('width' in d) p.stroke = d.width;
+              return p;
+            };
+            if (kind === 'arrow') {
+              const [v, set] = makeAnnProps(defaultArrowProps, baseFrom, basePatch);
+              return <ArrowProperties props={v} setProps={set} />;
+            }
+            if (kind === 'pen') {
+              const [v, set] = makeAnnProps(defaultPenProps, baseFrom, basePatch);
+              return <PenProperties props={v} setProps={set} />;
+            }
+            if (kind === 'highlight') {
+              const [v, set] = makeAnnProps(defaultHighlightProps, baseFrom, basePatch);
+              return <HighlightProperties props={v} setProps={set} />;
+            }
+            if (kind === 'rect' || kind === 'ellipse' || kind === 'arrow-shape') {
+              const [v, set] = makeAnnProps(defaultShapeProps, baseFrom, basePatch);
+              return <ShapeProperties props={v} setProps={set} />;
+            }
+            if (kind === 'text' || kind === 'callout') {
+              const textFrom = (a) => ({ ...baseFrom(a), bold: !!a.bold, italic: !!a.italic, underline: !!a.underline, font: a.font || 'Inter, sans-serif', fontSize: a.fontSize ?? 0.028 });
+              const textPatch = (d) => {
+                const p = basePatch(d);
+                ['bold', 'italic', 'underline', 'font', 'fontSize'].forEach((k) => { if (k in d) p[k] = d[k]; });
+                return p;
+              };
+              const [v, set] = makeAnnProps(defaultTextProps, textFrom, textPatch);
+              return (
+                <ToolProperties
+                  tool={kind === 'callout' ? 'Callout' : 'Text'}
+                  props={v}
+                  setProps={set}
+                  color={v.color}
+                  setColor={(c) => updateAnnotation(selectedId, { color: c })}
+                  pickColor={pickColor}
+                  swapColors={swapColors}
+                />
+              );
+            }
+          }
+          if (activeTool === 'Text' || activeTool === 'Callout') return (
+            <ToolProperties tool={activeTool} props={textProps} setProps={setTextProps} color={style.color} setColor={(v) => setStyle((s) => ({ ...s, color: v }))} pickColor={pickColor} swapColors={swapColors} />
+          );
+          if (activeTool === 'Shape') return <ShapeProperties props={shapeProps} setProps={setShapeProps} />;
+          if (activeTool === 'Fill') return <FillProperties props={fillProps} setProps={setFillProps} pickColor={pickColor} />;
+          if (activeTool === 'Selection') return <SelectionProperties props={selectionProps} setProps={setSelectionProps} />;
+          if (activeTool === 'Arrow') return <ArrowProperties props={arrowProps} setProps={setArrowProps} />;
+          if (activeTool === 'Highlight') return <HighlightProperties props={highlightProps} setProps={setHighlightProps} />;
+          if (activeTool === 'Pen') return <PenProperties props={penProps} setProps={setPenProps} />;
+          return null;
+        })()}
 
         <section className="inspector-group qs-group">
           <p className="eyebrow">Stroke · {style.stroke}px</p>
@@ -2546,7 +2599,7 @@ function createBlankImage(sizeKey, bg = '#ffffff') {
   }, 'image/png'));
 }
 
-function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation, pendingArrow, setPendingArrow, stepCounter, removeAnnotation, duplicateAnnotation, style, textProps, shapeProps, arrowProps, penProps, highlightProps, filters, canvasSize, canvasBg = 'checker', zoom = 1, onCrop }) {
+function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation, pendingArrow, setPendingArrow, stepCounter, removeAnnotation, duplicateAnnotation, style, textProps, shapeProps, arrowProps, penProps, highlightProps, filters, canvasSize, canvasBg = 'checker', zoom = 1, onCrop, selectedId, setSelectedId }) {
   const wrapRef = React.useRef(null);
   const stageRef = React.useRef(null);
   const [size, setSize] = React.useState({ w: 0, h: 0 });
@@ -2554,7 +2607,6 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
   const [drag, setDrag] = React.useState(null);
   const [popup, setPopup] = React.useState(null);
   const [moveAnn, setMoveAnn] = React.useState(null);
-  const [selectedId, setSelectedId] = React.useState(null);
   const notify = useToast();
 
   const dragTools = ['Arrow', 'Rect', 'Ellipse', 'Blur', 'Mask', 'Crop'];
@@ -2755,6 +2807,7 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
       return;
     }
     if (tool === 'Selection') return;
+    if (!tool) return;
     const kind = tool.toLowerCase();
     addAnnotation({ kind, x, y, w, h, color: style.color, stroke: style.stroke });
   };
@@ -2851,7 +2904,7 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
     <div className={`artboard image-board bg-${canvasBg}`} ref={wrapRef} onContextMenu={(e) => handleContextMenu(e)}>
       <div
         ref={stageRef}
-        className={`img-stage tool-${tool.toLowerCase()}`}
+        className={`img-stage tool-${(tool || 'none').toLowerCase()}`}
         style={stageStyle}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -2873,20 +2926,28 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
             const sw = (a.stroke || 4) / 600;
             const fontSize = (a.fontSize || 0.028);
             if (a.kind === 'arrow') {
-              const dx = a.x2 - a.x1, dy = a.y2 - a.y1;
-              const len = Math.hypot(dx, dy) || 1;
-              const ux = dx / len, uy = dy / len;
-              const headLen = Math.max(sw * 3.5, 0.018);
-              const headW = headLen * 0.6;
-              const px = -uy, py = ux;
-              const tx = a.x2, ty = a.y2;
-              const bx = tx - ux * headLen, by = ty - uy * headLen;
-              const p1x = bx + px * headW, p1y = by + py * headW;
-              const p2x = bx - px * headW, p2y = by - py * headW;
+              const W = size.w || 1, H = size.h || 1;
+              const dxp = (a.x2 - a.x1) * W;
+              const dyp = (a.y2 - a.y1) * H;
+              const lenp = Math.hypot(dxp, dyp) || 1;
+              const uxp = dxp / lenp, uyp = dyp / lenp;
+              const strokePx = a.stroke || 4;
+              const headL = Math.max(strokePx * 3.5, 14);
+              const headW = headL * 0.6;
+              const tipX = a.x2, tipY = a.y2;
+              const baseX = a.x2 - (uxp * headL) / W;
+              const baseY = a.y2 - (uyp * headL) / H;
+              const perpX = -uyp, perpY = uxp;
+              const p1x = baseX + (perpX * headW) / W;
+              const p1y = baseY + (perpY * headW) / H;
+              const p2x = baseX - (perpX * headW) / W;
+              const p2y = baseY - (perpY * headW) / H;
+              const lineEndX = a.x2 - (uxp * headL * 0.6) / W;
+              const lineEndY = a.y2 - (uyp * headL * 0.6) / H;
               return (
                 <g key={a.id} style={{ pointerEvents: 'all', cursor: 'move' }} onContextMenu={onCtx} onMouseDown={onDown}>
-                  <line x1={a.x1} y1={a.y1} x2={bx + ux * headLen * 0.4} y2={by + uy * headLen * 0.4} stroke={c} strokeWidth={sw} strokeLinecap="round" />
-                  <polygon points={`${tx},${ty} ${p1x},${p1y} ${p2x},${p2y}`} fill={c} />
+                  <line x1={a.x1} y1={a.y1} x2={lineEndX} y2={lineEndY} stroke={c} strokeWidth={strokePx} vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+                  <polygon points={`${tipX},${tipY} ${p1x},${p1y} ${p2x},${p2y}`} fill={c} />
                 </g>
               );
             }
@@ -3033,13 +3094,6 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
           </div>
         );
       })()}
-      <div className="img-meta">
-        <span>{image.name}</span>
-        <span>{size.w}×{size.h}</span>
-        <span>{(image.size / 1024).toFixed(1)} KB</span>
-        <span>{annotations.length} annotations</span>
-        <span className="hint">Right-click for menu · Esc to cancel</span>
-      </div>
 
       {ctxMenu && (
         <ContextMenu
@@ -3286,31 +3340,72 @@ function BlankCanvasPrompt({ canvasSize, setCanvasSize, setLoadedImage, notify }
     notify('Blank canvas created');
   };
   const pasteFromClipboard = async () => {
+    const loadBlob = async (blob, mime) => {
+      const url = URL.createObjectURL(blob);
+      const dims = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => resolve({ w: 0, h: 0 });
+        img.src = url;
+      });
+      setCanvasSize('free');
+      const ext = (mime || 'image/png').split('/')[1] || 'png';
+      setLoadedImage({ name: `clipboard-${Date.now()}.${ext}`, url, size: blob.size, width: dims.w, height: dims.h });
+      notify(`Image pasted ${dims.w}×${dims.h}`);
+    };
     try {
-      if (!navigator.clipboard?.read) { notify('Clipboard API unavailable'); return; }
+      if (!navigator.clipboard?.read) {
+        notify('Press Ctrl/Cmd+V to paste');
+        return;
+      }
       const items = await navigator.clipboard.read();
+      let found = false;
       for (const item of items) {
-        const type = item.types.find((t) => t.startsWith('image/'));
-        if (type) {
-          const blob = await item.getType(type);
-          const url = URL.createObjectURL(blob);
-          const dims = await new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-            img.onerror = () => resolve({ w: 0, h: 0 });
-            img.src = url;
-          });
-          setCanvasSize('free');
-          setLoadedImage({ name: `clipboard-${Date.now()}.${type.split('/')[1] || 'png'}`, url, size: blob.size, width: dims.w, height: dims.h });
-          notify(`Image pasted ${dims.w}×${dims.h}`);
-          return;
+        const imgType = item.types.find((t) => t.startsWith('image/'));
+        if (imgType) {
+          const blob = await item.getType(imgType);
+          await loadBlob(blob, imgType);
+          found = true;
+          break;
         }
       }
-      notify('No image in clipboard');
+      if (!found) {
+        const typesSeen = items.flatMap((i) => i.types).join(', ') || 'empty';
+        notify(`No image found. Clipboard has: ${typesSeen}`);
+      }
     } catch (err) {
-      notify('Clipboard read failed: ' + (err?.message || err));
+      const msg = err?.message || String(err);
+      if (/denied|NotAllowed/i.test(msg)) {
+        notify('Clipboard permission denied. Use Ctrl/Cmd+V instead');
+      } else {
+        notify('Clipboard read failed: ' + msg);
+      }
     }
   };
+
+  React.useEffect(() => {
+    const onPaste = async (e) => {
+      const items = [...(e.clipboardData?.items || [])];
+      const imgItem = items.find((i) => i.type.startsWith('image/'));
+      if (!imgItem) return;
+      e.preventDefault();
+      const blob = imgItem.getAsFile();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const dims = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => resolve({ w: 0, h: 0 });
+        img.src = url;
+      });
+      setCanvasSize('free');
+      const ext = (blob.type || 'image/png').split('/')[1] || 'png';
+      setLoadedImage({ name: `clipboard-${Date.now()}.${ext}`, url, size: blob.size, width: dims.w, height: dims.h });
+      notify(`Image pasted ${dims.w}×${dims.h}`);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [setCanvasSize, setLoadedImage, notify]);
   const sizes = [
     { id: 'a3', label: 'A3', dims: '297×420mm' },
     { id: 'a4', label: 'A4', dims: '210×297mm' },
