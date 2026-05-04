@@ -66,6 +66,9 @@ const dict = {
     'Arrow': 'Arrow', 'Pen': 'Pen', 'Highlight': 'Highlight', 'Shape': 'Shape', 'Fill': 'Fill',
     'Callout': 'Callout', 'Step': 'Step', 'Blur': 'Blur', 'Text': 'Text', 'Mask': 'Mask',
     'Selection': 'Selection', 'Crop': 'Crop', 'Grab Text': 'Grab Text',
+    'Magic': 'Magic Select', 'Tolerance': 'Tolerance', 'Erase pixels': 'Erase pixels',
+    'Crop to selection': 'Crop to selection', 'More': 'More', 'Install': 'Install app',
+    'Menu': 'Menu', 'Tools': 'Tools', 'Properties': 'Properties',
     'Color': 'Color', 'Opacity': 'Opacity', 'Width': 'Width', 'Style': 'Style',
     'Start size': 'Start size', 'End size': 'End size',
     'Light theme': 'Light theme', 'Dark theme': 'Dark theme',
@@ -87,6 +90,9 @@ const dict = {
     'Arrow': 'Ok', 'Pen': 'Kalem', 'Highlight': 'Vurgu', 'Shape': 'Şekil', 'Fill': 'Doldur',
     'Callout': 'Balon', 'Step': 'Adım', 'Blur': 'Bulanık', 'Text': 'Metin', 'Mask': 'Maske',
     'Selection': 'Seçim', 'Crop': 'Kırp', 'Grab Text': 'Metni Al',
+    'Magic': 'Akıllı Seçim', 'Tolerance': 'Tolerans', 'Erase pixels': 'Pikselleri sil',
+    'Crop to selection': 'Seçime kırp', 'More': 'Daha', 'Install': 'Uygulamayı yükle',
+    'Menu': 'Menü', 'Tools': 'Araçlar', 'Properties': 'Özellikler',
     'Color': 'Renk', 'Opacity': 'Opaklık', 'Width': 'Kalınlık', 'Style': 'Stil',
     'Start size': 'Başlangıç', 'End size': 'Bitiş',
     'Light theme': 'Açık tema', 'Dark theme': 'Koyu tema',
@@ -104,9 +110,35 @@ function App() {
   const [publishedLink, setPublishedLink] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'en');
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [overflowOpen, setOverflowOpen] = useState(false);
   const t = useCallback((k) => dict[lang]?.[k] ?? k, [lang]);
 
   useEffect(() => { localStorage.setItem('lang', lang); }, [lang]);
+
+  useEffect(() => {
+    const onBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  const triggerInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try {
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') notify('Installing...');
+    } catch {}
+    setInstallPrompt(null);
+  };
   const fileInputRef = React.useRef(null);
   const activeModeContent = useMemo(() => modeContent[activeMode], [activeMode]);
 
@@ -206,30 +238,46 @@ function App() {
           </div>
 
           <nav className="top-actions compact">
-            <button className="ghost sm icon-btn" onClick={handleCapture}><Dot /> {t('Capture')}</button>
-            <button className="ghost sm icon-btn" onClick={handleImport}><Dot /> {t('Import')}</button>
+            <button className="ghost sm icon-btn" onClick={handleImport} title={t('Import')}>📁<span className="lbl"> {t('Import')}</span></button>
+            <button className="ghost sm icon-btn hide-sm" onClick={handleCapture} title={t('Capture')}>⛶<span className="lbl"> {t('Capture')}</span></button>
             <div className="seg-toggle">
               <button className={`seg-opt${theme === 'light' ? ' on' : ''}`} onClick={() => setTheme('light')} title={t('Light theme')}>☀</button>
               <button className={`seg-opt${theme === 'dark' ? ' on' : ''}`} onClick={() => setTheme('dark')} title={t('Dark theme')}>☾</button>
             </div>
-            <div className="seg-toggle">
+            <div className="seg-toggle hide-sm">
               <button className={`seg-opt${lang === 'en' ? ' on' : ''}`} onClick={() => setLang('en')}>EN</button>
               <button className={`seg-opt${lang === 'tr' ? ' on' : ''}`} onClick={() => setLang('tr')}>TR</button>
             </div>
-            <button className="ghost sm" onClick={() => {
-              if (activeScreen !== 'editor') setActiveScreen('editor');
-              setTimeout(() => {
-                if (typeof window.__fwExportJson === 'function') window.__fwExportJson();
-                else notify('Open editor first');
-              }, 60);
-            }} title="Export project JSON">{'{ }'} {t('Export JSON')}</button>
-            <button className="primary sm" onClick={() => {
-              if (activeScreen !== 'editor') setActiveScreen('editor');
-              setTimeout(() => {
-                if (typeof window.__fwImportJson === 'function') window.__fwImportJson();
-                else notify('Open editor first');
-              }, 60);
-            }} title="Import project JSON">{'{ }'} {t('Import JSON')}</button>
+            {installPrompt && (
+              <button className="primary sm install-btn" onClick={triggerInstall} title={t('Install')}>⤓ {t('Install')}</button>
+            )}
+            <div className="overflow-wrap">
+              <button className="ghost sm icon-btn" onClick={() => setOverflowOpen((v) => !v)} title={t('More')}>⋯</button>
+              {overflowOpen && (
+                <>
+                  <div className="overflow-backdrop" onClick={() => setOverflowOpen(false)} />
+                  <div className="overflow-menu" onClick={() => setOverflowOpen(false)}>
+                    <button className="overflow-item" onClick={handleCapture}>⛶ {t('Capture')}</button>
+                    <button className="overflow-item" onClick={() => setLang(lang === 'en' ? 'tr' : 'en')}>🌐 {lang === 'en' ? 'TR' : 'EN'}</button>
+                    <div className="overflow-sep" />
+                    <button className="overflow-item" onClick={() => {
+                      if (activeScreen !== 'editor') setActiveScreen('editor');
+                      setTimeout(() => {
+                        if (typeof window.__fwExportJson === 'function') window.__fwExportJson();
+                        else notify('Open editor first');
+                      }, 60);
+                    }}>{'{ }'} {t('Export JSON')}</button>
+                    <button className="overflow-item" onClick={() => {
+                      if (activeScreen !== 'editor') setActiveScreen('editor');
+                      setTimeout(() => {
+                        if (typeof window.__fwImportJson === 'function') window.__fwImportJson();
+                        else notify('Open editor first');
+                      }, 60);
+                    }}>{'{ }'} {t('Import JSON')}</button>
+                  </div>
+                </>
+              )}
+            </div>
           </nav>
         </header>
 
@@ -1038,6 +1086,64 @@ function FillProperties({ props, setProps, pickColor }) {
         <label className="tp-checkbox">
           <input type="checkbox" checked={props.globalFill} onChange={(e) => upd({ globalFill: e.target.checked })} />
           <span>Global Fill</span>
+        </label>
+      </section>
+    </>
+  );
+}
+
+function QuickStylesMagic({ props, setProps }) {
+  const swatches = ['#3b82f6', '#d95f33', '#2d8d4a', '#b03030', '#d7b74d', '#1f1b18'];
+  return (
+    <section className="inspector-group qs-group">
+      <p className="eyebrow">Selection color</p>
+      <div className="color-swatches">
+        {swatches.map((c) => (
+          <button key={c}
+            className={`swatch${props.color === c ? ' active' : ''}`}
+            style={{ background: c }}
+            onClick={() => setProps((p) => ({ ...p, color: c }))}
+            title={c} />
+        ))}
+      </div>
+      <label className="tp-slider">
+        <span>Tolerance:</span>
+        <input type="range" min="0" max="120" value={props.tolerance}
+          onChange={(e) => setProps((p) => ({ ...p, tolerance: +e.target.value }))} className="slider" />
+        <span className="tp-num">{props.tolerance}</span>
+      </label>
+      <p className="eyebrow" style={{ marginTop: 6, fontSize: '0.7rem', opacity: 0.7 }}>
+        Click image to flood-select similar colors. Right-click selection to erase or crop.
+      </p>
+    </section>
+  );
+}
+
+function MagicProperties({ props, setProps }) {
+  const upd = (patch) => setProps((p) => ({ ...p, ...patch }));
+  return (
+    <>
+      <div className="panel-header"><h3>Tool Properties</h3><span>Magic</span></div>
+      <section className="inspector-group qs-group">
+        <label className="tp-slider">
+          <span>Tolerance:</span>
+          <input type="range" min="0" max="120" value={props.tolerance}
+            onChange={(e) => upd({ tolerance: +e.target.value })} className="slider" />
+          <span className="tp-num">{props.tolerance}</span>
+        </label>
+        <label className="tp-slider">
+          <span>Opacity:</span>
+          <input type="range" min="10" max="100" value={props.opacity}
+            onChange={(e) => upd({ opacity: +e.target.value })} className="slider" />
+          <span className="tp-num">%{props.opacity}</span>
+        </label>
+        <label className="tp-checkbox">
+          <input type="checkbox" checked={props.contiguous} onChange={(e) => upd({ contiguous: e.target.checked })} />
+          <span>Contiguous (flood-fill)</span>
+        </label>
+        <label className="tp-checkbox">
+          <input type="checkbox" checked={props.invert} onChange={(e) => upd({ invert: e.target.checked })} />
+          <span>Invert selection</span>
         </label>
       </section>
     </>
@@ -1924,6 +2030,14 @@ const defaultFillProps = {
   globalFill: false,
 };
 
+const defaultMagicProps = {
+  color: '#3b82f6',
+  tolerance: 30,
+  opacity: 60,
+  contiguous: true,
+  invert: false,
+};
+
 const fillSwatches = ['#d95f33', '#2d8d4a', '#2b6aad', '#d7b74d', '#6e6258', '#f5efe4', '#1f1b18', null /* eyedropper slot */];
 
 const defaultShapeProps = {
@@ -1968,6 +2082,8 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
   const [arrowProps, setArrowProps] = useState(defaultArrowProps);
   const [highlightProps, setHighlightProps] = useState(defaultHighlightProps);
   const [penProps, setPenProps] = useState(defaultPenProps);
+  const [magicProps, setMagicProps] = useState(defaultMagicProps);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [ocrState, setOcrState] = useState(null);
   const [folderView, setFolderView] = useState(null);
   const [canvasSize, setCanvasSize] = useState('free');
@@ -2246,7 +2362,10 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
   swapRef.current = swapColors;
 
   return (
-    <main className="workspace" data-mode={activeMode} data-tool={activeTool}>
+    <main className={`workspace${drawerOpen ? ' drawer-open' : ''}`} data-mode={activeMode} data-tool={activeTool}>
+      <button className="drawer-toggle" onClick={() => setDrawerOpen((v) => !v)} title="Tools / properties" aria-label="Toggle panels">
+        <span>{drawerOpen ? '✕' : '☰'}</span>
+      </button>
       <aside className="left-rail panel">
         <CompactDropZone onDropImage={setLoadedImage} onPick={pickLocalImage} notify={notify} />
 
@@ -2285,7 +2404,7 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
       <section className="center-stage">
         <Panel className="canvas-toolbar">
           <ToolBar
-            tools={['Arrow', 'Pen', 'Highlight', 'Shape', 'Fill', 'Callout', 'Step', 'Blur', 'Text', 'Mask', 'Selection', 'Crop', 'Grab Text']}
+            tools={['Arrow', 'Pen', 'Highlight', 'Shape', 'Text', 'Callout', 'Step', 'Magic', 'Blur', 'Crop', 'Grab Text']}
             value={activeTool}
             onSelect={(t) => { setActiveTool(t); setPendingArrow(null); }}
           />
@@ -2389,6 +2508,8 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
               arrowProps={arrowProps}
               penProps={penProps}
               highlightProps={highlightProps}
+              magicProps={magicProps}
+              setLoadedImage={setLoadedImage}
               filters={filters}
               canvasSize={canvasSize}
               canvasBg={canvasBg}
@@ -2439,6 +2560,8 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
           <QuickStylesArrow arrowProps={arrowProps} setArrowProps={setArrowProps} />
         ) : activeTool === 'Fill' ? (
           <QuickStylesFill fillProps={fillProps} setFillProps={setFillProps} />
+        ) : activeTool === 'Magic' ? (
+          <QuickStylesMagic props={magicProps} setProps={setMagicProps} />
         ) : activeTool === 'Shape' ? (
           <QuickStylesShape shapeProps={shapeProps} setShapeProps={setShapeProps} />
         ) : (activeTool === 'Text' || activeTool === 'Callout') ? (
@@ -2527,6 +2650,7 @@ function EditorScreen({ activeMode, content, onFlowSelect, loadedImage, setLoade
           );
           if (activeTool === 'Shape') return <ShapeProperties props={shapeProps} setProps={setShapeProps} />;
           if (activeTool === 'Fill') return <FillProperties props={fillProps} setProps={setFillProps} pickColor={pickColor} />;
+          if (activeTool === 'Magic') return <MagicProperties props={magicProps} setProps={setMagicProps} />;
           if (activeTool === 'Selection') return <SelectionProperties props={selectionProps} setProps={setSelectionProps} />;
           if (activeTool === 'Arrow') return <ArrowProperties props={arrowProps} setProps={setArrowProps} />;
           if (activeTool === 'Highlight') return <HighlightProperties props={highlightProps} setProps={setHighlightProps} />;
@@ -2599,7 +2723,7 @@ function createBlankImage(sizeKey, bg = '#ffffff') {
   }, 'image/png'));
 }
 
-function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation, pendingArrow, setPendingArrow, stepCounter, removeAnnotation, duplicateAnnotation, style, textProps, shapeProps, arrowProps, penProps, highlightProps, filters, canvasSize, canvasBg = 'checker', zoom = 1, onCrop, selectedId, setSelectedId }) {
+function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation, pendingArrow, setPendingArrow, stepCounter, removeAnnotation, duplicateAnnotation, style, textProps, shapeProps, arrowProps, penProps, highlightProps, magicProps, setLoadedImage, filters, canvasSize, canvasBg = 'checker', zoom = 1, onCrop, selectedId, setSelectedId }) {
   const wrapRef = React.useRef(null);
   const stageRef = React.useRef(null);
   const [size, setSize] = React.useState({ w: 0, h: 0 });
@@ -2667,7 +2791,42 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
     };
   };
 
+  const [magicBusy, setMagicBusy] = React.useState(false);
+
+  const runMagicSelect = async (p) => {
+    if (!image || magicBusy) return;
+    setMagicBusy(true);
+    notify('Analyzing colors...');
+    try {
+      const mp = magicProps || defaultMagicProps;
+      const res = await magicWandFlood(image.url, p.x, p.y, mp.tolerance, {
+        contiguous: mp.contiguous !== false,
+        invert: !!mp.invert,
+      });
+      if (!res) {
+        notify('No region matched');
+      } else {
+        const pct = ((res.pixelCount / (res.W * res.H)) * 100).toFixed(1);
+        addAnnotation({
+          kind: 'magic-mask',
+          mask: res.url,
+          bounds: res.bounds,
+          color: mp.color,
+          opacity: mp.opacity,
+        });
+        notify(`Selected ${pct}% of image`);
+      }
+    } catch (err) {
+      notify(`Magic select failed: ${err.message}`);
+    }
+    setMagicBusy(false);
+  };
+
   const applyTool = (toolName, p, nativeEvent) => {
+    if (toolName === 'Magic') {
+      runMagicSelect(p);
+      return;
+    }
     if (toolName === 'Step') {
       stepCounter.current += 1;
       addAnnotation({ kind: 'step', x: p.x, y: p.y, n: stepCounter.current, color: style.color });
@@ -2853,12 +3012,50 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
     };
   }, [ctxMenu, selectedId]);
 
+  const eraseFromImage = async (a) => {
+    if (!a?.mask || !image) return;
+    notify('Erasing pixels...');
+    try {
+      const blob = await applyMaskToImage(image.url, a.mask, 'erase');
+      const url = URL.createObjectURL(blob);
+      setLoadedImage?.({ name: image.name, url, size: blob.size });
+      removeAnnotation(a.id);
+      notify('Pixels erased');
+    } catch (err) {
+      notify(`Erase failed: ${err.message}`);
+    }
+  };
+
+  const cropToSelection = async (a) => {
+    if (!a?.mask || !image) return;
+    notify('Cropping to selection...');
+    try {
+      const blob = await cropToMask(image.url, a.mask, a.bounds || { x: 0, y: 0, w: 1, h: 1 });
+      const url = URL.createObjectURL(blob);
+      const dot = image.name.lastIndexOf('.');
+      const newName = dot > 0 ? `${image.name.slice(0, dot)}-cropped.png` : `${image.name}-cropped.png`;
+      setLoadedImage?.({ name: newName, url, size: blob.size });
+      removeAnnotation(a.id);
+      notify('Cropped to selection');
+    } catch (err) {
+      notify(`Crop failed: ${err.message}`);
+    }
+  };
+
   const annItems = [
     { label: 'Duplicate', action: (a) => duplicateAnnotation(a.id) },
     { label: 'Delete', action: (a) => removeAnnotation(a.id), danger: true },
   ];
 
+  const magicAnnItems = [
+    { label: 'Erase pixels from image', action: (a) => eraseFromImage(a), danger: true },
+    { label: 'Crop image to selection', action: (a) => cropToSelection(a) },
+    { sep: true },
+    { label: 'Delete selection', action: (a) => removeAnnotation(a.id) },
+  ];
+
   const canvasItems = [
+    { label: 'Smart select here', action: (p) => runMagicSelect(p) },
     { label: 'Add Step here', action: (p) => { stepCounter.current += 1; addAnnotation({ kind: 'step', x: p.x, y: p.y, n: stepCounter.current, color: style.color }); } },
     { label: 'Add Text here', action: (p) => { const t = prompt('Text:', 'Label'); if (t) addAnnotation({ kind: 'text', x: p.x, y: p.y, text: t, color: style.color }); } },
     { label: 'Add Callout here', action: (p) => { const t = prompt('Callout:', 'Note'); if (t) addAnnotation({ kind: 'callout', x: p.x, y: p.y, text: t, color: style.color }); } },
@@ -2989,6 +3186,24 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
               const width = a.kind === 'highlight' ? sw * 3 : sw;
               return <path key={a.id} d={d} fill="none" stroke={c} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" opacity={opacity} style={{ pointerEvents: 'stroke', cursor: 'move' }} onContextMenu={onCtx} onMouseDown={onDown} />;
             }
+            if (a.kind === 'magic-mask') {
+              const op = (a.opacity != null ? a.opacity : 60) / 100;
+              const mid = `mw-${a.id}`;
+              return (
+                <g key={a.id} style={{ pointerEvents: 'all', cursor: 'pointer' }} onContextMenu={onCtx} onMouseDown={(e) => { e.stopPropagation(); setSelectedId(a.id); }}>
+                  <defs>
+                    <mask id={mid} maskUnits="userSpaceOnUse" x="0" y="0" width="1" height="1">
+                      <image href={a.mask} x="0" y="0" width="1" height="1" preserveAspectRatio="none" />
+                    </mask>
+                  </defs>
+                  <rect x="0" y="0" width="1" height="1" fill={c} mask={`url(#${mid})`} opacity={op} />
+                  {a.bounds && (
+                    <rect x={a.bounds.x} y={a.bounds.y} width={a.bounds.w} height={a.bounds.h}
+                      fill="none" stroke={c} strokeWidth="0.002" strokeDasharray="0.006 0.004" opacity="0.9" />
+                  )}
+                </g>
+              );
+            }
             return null;
           })}
           {freePath && freePath.length > 1 && (
@@ -3099,7 +3314,7 @@ function ImageEditor({ image, tool, annotations, addAnnotation, updateAnnotation
         <ContextMenu
           x={ctxMenu.x}
           y={ctxMenu.y}
-          items={ctxMenu.annotation ? annItems : canvasItems}
+          items={ctxMenu.annotation ? (ctxMenu.annotation.kind === 'magic-mask' ? magicAnnItems : annItems) : canvasItems}
           onPick={(item) => {
             if (ctxMenu.annotation) item.action(ctxMenu.annotation);
             else item.action(ctxMenu.pos);
@@ -3168,6 +3383,7 @@ function annBounds(a) {
     const xs = a.points.map((p) => p.x), ys = a.points.map((p) => p.y);
     return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
   }
+  if (a.kind === 'magic-mask' && a.bounds) return { ...a.bounds };
   if ('w' in a) return { x: a.x, y: a.y, w: a.w, h: a.h };
   return null;
 }
@@ -3177,6 +3393,147 @@ function pointsToPath(pts) {
   let d = `M ${pts[0].x} ${pts[0].y}`;
   for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
   return d;
+}
+
+async function loadImageEl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = url;
+  });
+}
+
+async function magicWandFlood(imageUrl, px, py, tolerance, opts = {}) {
+  const { contiguous = true, invert = false } = opts;
+  const img = await loadImageEl(imageUrl).catch(() => null);
+  if (!img) return null;
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cnv = document.createElement('canvas');
+  cnv.width = W; cnv.height = H;
+  const cx = cnv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, 0, 0);
+  let id;
+  try { id = cx.getImageData(0, 0, W, H); }
+  catch { return null; }
+  const d = id.data;
+  const sx = Math.max(0, Math.min(W - 1, Math.floor(px * W)));
+  const sy = Math.max(0, Math.min(H - 1, Math.floor(py * H)));
+  const idx0 = (sy * W + sx) * 4;
+  const r0 = d[idx0], g0 = d[idx0 + 1], b0 = d[idx0 + 2];
+  const tol2 = (tolerance * tolerance) * 3;
+  const total = W * H;
+  const visited = new Uint8Array(total);
+
+  const matches = (i) => {
+    const i4 = i * 4;
+    const dr = d[i4] - r0, dg = d[i4 + 1] - g0, db = d[i4 + 2] - b0;
+    return (dr * dr + dg * dg + db * db) <= tol2;
+  };
+
+  if (contiguous) {
+    let cap = 4096;
+    let stack = new Int32Array(cap);
+    let sp = 0;
+    const push = (i) => {
+      if (sp >= cap) {
+        cap *= 2;
+        const ns = new Int32Array(cap);
+        ns.set(stack);
+        stack = ns;
+      }
+      stack[sp++] = i;
+    };
+    push(sy * W + sx);
+    while (sp > 0) {
+      const i = stack[--sp];
+      if (visited[i]) continue;
+      if (!matches(i)) continue;
+      visited[i] = 1;
+      const x = i % W;
+      if (x + 1 < W && !visited[i + 1]) push(i + 1);
+      if (x > 0 && !visited[i - 1]) push(i - 1);
+      if (i + W < total && !visited[i + W]) push(i + W);
+      if (i - W >= 0 && !visited[i - W]) push(i - W);
+    }
+  } else {
+    for (let i = 0; i < total; i++) if (matches(i)) visited[i] = 1;
+  }
+
+  if (invert) {
+    for (let i = 0; i < total; i++) visited[i] = visited[i] ? 0 : 1;
+  }
+
+  let count = 0;
+  for (let i = 0; i < total; i++) if (visited[i]) count++;
+  if (count === 0) return null;
+
+  const mc = document.createElement('canvas');
+  mc.width = W; mc.height = H;
+  const mctx = mc.getContext('2d');
+  const mdata = mctx.createImageData(W, H);
+  const md = mdata.data;
+  for (let i = 0; i < total; i++) {
+    if (visited[i]) {
+      const o = i * 4;
+      md[o] = 255; md[o + 1] = 255; md[o + 2] = 255; md[o + 3] = 255;
+    }
+  }
+  mctx.putImageData(mdata, 0, 0);
+
+  let minX = W, minY = H, maxX = 0, maxY = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (visited[y * W + x]) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  return {
+    url: mc.toDataURL('image/png'),
+    bounds: {
+      x: minX / W,
+      y: minY / H,
+      w: (maxX - minX + 1) / W,
+      h: (maxY - minY + 1) / H,
+    },
+    pixelCount: count,
+    W, H,
+  };
+}
+
+async function applyMaskToImage(imageUrl, maskUrl, mode = 'erase') {
+  const [img, mask] = await Promise.all([loadImageEl(imageUrl), loadImageEl(maskUrl)]);
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const cx = c.getContext('2d');
+  cx.drawImage(img, 0, 0);
+  cx.globalCompositeOperation = mode === 'erase' ? 'destination-out' : 'destination-in';
+  cx.drawImage(mask, 0, 0, W, H);
+  cx.globalCompositeOperation = 'source-over';
+  return new Promise((resolve) => c.toBlob((blob) => resolve(blob), 'image/png'));
+}
+
+async function cropToMask(imageUrl, maskUrl, bounds) {
+  const blob = await applyMaskToImage(imageUrl, maskUrl, 'keep');
+  const url = URL.createObjectURL(blob);
+  const img = await loadImageEl(url);
+  URL.revokeObjectURL(url);
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const sx = Math.max(0, Math.floor(bounds.x * W));
+  const sy = Math.max(0, Math.floor(bounds.y * H));
+  const sw = Math.min(W - sx, Math.ceil(bounds.w * W));
+  const sh = Math.min(H - sy, Math.ceil(bounds.h * H));
+  const c = document.createElement('canvas');
+  c.width = sw; c.height = sh;
+  c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+  return new Promise((resolve) => c.toBlob((b) => resolve(b), 'image/png'));
 }
 
 async function exportCanvas(image, annotations, filters = defaultFilters, style = defaultStyle, options = {}) {

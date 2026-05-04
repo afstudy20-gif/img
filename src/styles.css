@@ -4417,3 +4417,185 @@ input[type="text"],
   place-items: start center !important;
   padding-top: 20px !important;
 }
+
+/* ===== Topbar overflow + install ===== */
+.overflow-wrap { position: relative; display: inline-flex; }
+.overflow-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: transparent;
+}
+.overflow-menu {
+  position: absolute; right: 0; top: calc(100% + 6px);
+  z-index: 101;
+  background: var(--card, #fff);
+  border: 1px solid var(--line, rgba(0,0,0,0.12));
+  border-radius: 10px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+  padding: 6px;
+  min-width: 200px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.overflow-item {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font: inherit;
+  color: var(--ink, #1f1b18);
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+}
+.overflow-item:hover { background: rgba(0,0,0,0.06); }
+[data-theme="dark"] .overflow-item:hover { background: rgba(255,255,255,0.08); }
+.overflow-sep {
+  height: 1px;
+  background: var(--line, rgba(0,0,0,0.1));
+  margin: 4px 0;
+}
+
+.install-btn { white-space: nowrap; }
+
+/* ===== Magic mask cursor ===== */
+.img-stage.tool-magic { cursor: crosshair; }
+
+/* ===== Mobile drawer toggle ===== */
+.drawer-toggle {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 90;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  border: 0;
+  background: var(--accent, #d95f33);
+  color: #fff;
+  font-size: 22px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.drawer-toggle span { display: inline-flex; }
+
+/* ===== Mobile ≤ 768px ===== */
+@media (max-width: 768px) {
+  .topbar.compact {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .brand.compact h1 { font-size: 1rem; }
+  .top-actions.compact {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .top-actions .ghost,
+  .top-actions .primary,
+  .top-actions .seg-toggle {
+    min-height: 36px;
+  }
+  .top-actions .lbl { display: none; }
+  .top-actions .hide-sm { display: none !important; }
+
+  .workspace {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+    padding: 8px;
+  }
+  .center-stage { order: 1; }
+  .left-rail, .right-rail {
+    order: 2;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .canvas-toolbar {
+    flex-wrap: wrap;
+    padding: 6px;
+    gap: 6px;
+  }
+  .tool-group {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .tool {
+    min-height: 36px;
+    min-width: 36px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  .canvas-actions {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .canvas-actions .divider { display: none; }
+  .canvas-actions .ctrl-group { gap: 2px; }
+  .canvas-actions .deg-input { width: 56px; }
+
+  .bottom-strip { display: none; }
+
+  .canvas-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .drawer-toggle { display: inline-flex; }
+
+  .workspace.drawer-open .right-rail,
+  .workspace.drawer-open .left-rail {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(360px, 92vw);
+    max-width: 92vw;
+    max-height: 100vh;
+    z-index: 95;
+    background: var(--card, #fff);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.25);
+    overflow-y: auto;
+  }
+  .workspace:not(.drawer-open) .right-rail,
+  .workspace:not(.drawer-open) .left-rail {
+    display: none;
+  }
+}
+
+/* ===== Small phones ≤ 480px ===== */
+@media (max-width: 480px) {
+  .topbar.compact .brand h1 { display: none; }
+  .seg-toggle { padding: 2px; }
+  .seg-toggle .seg-opt { padding: 4px 8px; font-size: 0.78rem; }
+  .modal-window { width: 96vw !important; max-width: 96vw !important; }
+  .modal-body { padding: 12px !important; }
+}
+
+/* ===== Touch devices ===== */
+@media (pointer: coarse) {
+  .tool, .ghost, .primary, .seg-opt, .overflow-item, .ctx-item {
+    min-height: 40px;
+  }
+  .swatch, .pen-swatch, .hl-swatch, .fill-swatch, .shape-swatch {
+    min-height: 36px;
+    min-width: 36px;
+  }
+  .slider {
+    height: 28px;
+  }
+}
+
+/* ===== PWA / safe-area ===== */
+@supports (padding: env(safe-area-inset-top)) {
+  .topbar.compact {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+  .drawer-toggle {
+    bottom: max(16px, calc(env(safe-area-inset-bottom) + 12px));
+    right: max(16px, calc(env(safe-area-inset-right) + 8px));
+  }
+}
